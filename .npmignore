@@ -1,7 +1,0 @@
-tests/
-node_modules/
-.git/
-*.log
-.DS_Store
-.gitignore
-.gitattributes
