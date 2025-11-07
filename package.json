@@ -1,21 +1,37 @@
 {
   "name": "playwright-mapper",
-  "version": "1.0.0",
-  "description": "**Run only the Playwright tests that matter.**",
-  "main": "index.js",
+  "version": "1.0.1",
+  "description": "Run only the Playwright tests that matter - smart test execution based on file changes",
+  "main": "src/index.js",
+  "bin": {
+    "playwright-mapper": "./bin/cli.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No tests configured. This is a CLI tool.\""
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/truthanb/playwright-mapper.git"
   },
-  "keywords": [],
+  "keywords": [
+    "playwright",
+    "testing",
+    "ci",
+    "git",
+    "test-automation",
+    "selective-testing"
+  ],
   "author": "Ben Truthan <ben.truthan.w@gmail.com>",
   "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/truthanb/playwright-mapper/issues"
   },
-  "homepage": "https://github.com/truthanb/playwright-mapper#readme"
+  "homepage": "https://github.com/truthanb/playwright-mapper#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
 }

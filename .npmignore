@@ -1,0 +1,27 @@
+# playwright-mapper
+
+Run only the Playwright tests that matter based on changed files.
+
+## Install
+
+```bash
+npm install -D playwright-mapper
+```
+
+## Quick Start
+
+```bash
+# Initialize config files
+npx playwright-mapper init
+
+# Run tests based on changed files
+npx playwright-mapper
+```
+
+## How it works
+
+1. Detects changed files in your branch
+2. Maps them to test tags via `test-mappings.js`
+3. Runs only relevant Playwright tests
+
+See the [full documentation](README.md) for details.
