@@ -35,9 +35,20 @@ Map test tags to file paths or directories. When files matching these paths chan
 
 ### 3. Tag your tests
 
+Add tags to your Playwright tests using the `tag` option ([see Playwright tagging docs](https://playwright.dev/docs/test-annotations#tag-tests)):
+
 ```js
 // tests/auth.spec.js
-test.describe('Authentication @auth @baseline', () => {
+test('user login', {
+  tag: ['@auth', '@baseline']
+}, async ({ page }) => {
+  // test implementation
+});
+
+// Or tag entire describe blocks
+test.describe('Authentication', {
+  tag: '@auth'
+}, () => {
   test('user login', async ({ page }) => {
     // test implementation
   });
