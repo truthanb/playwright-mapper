@@ -1,0 +1,21 @@
+{
+  "name": "playwright-mapper",
+  "version": "1.0.0",
+  "description": "**Run only the Playwright tests that matter.**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/truthanb/playwright-mapper.git"
+  },
+  "keywords": [],
+  "author": "Ben Truthan <ben.truthan.w@gmail.com>",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/truthanb/playwright-mapper/issues"
+  },
+  "homepage": "https://github.com/truthanb/playwright-mapper#readme"
+}
