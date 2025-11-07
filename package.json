@@ -1,6 +1,6 @@
 {
   "name": "playwright-mapper",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Run only the Playwright tests that matter — smart test selection and mapping based on git diff",
   "main": "src/index.js",
   "type": "commonjs",
