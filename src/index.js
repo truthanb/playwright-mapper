@@ -19,18 +19,40 @@ function getChangedFiles(baseBranch = 'main', verbose = false) {
       console.log(`[mapper] Base branch: ${baseBranch}`);
     }
 
-    // Use triple-dot diff to compare against merge base
-    const diffCommand = `git diff --name-only ${baseBranch}...HEAD`;
-    const output = execSync(diffCommand, { encoding: 'utf-8' }).trim();
+    const allFiles = new Set();
 
-    if (!output) {
+    // Get committed changes compared to base branch
+    const diffCommand = `git diff --name-only ${baseBranch}...HEAD`;
+    const committedOutput = execSync(diffCommand, { encoding: 'utf-8' }).trim();
+    
+    if (committedOutput) {
+      committedOutput.split('\n').filter(file => file).forEach(file => allFiles.add(file));
+    }
+
+    // Get uncommitted changes (staged and unstaged)
+    const unstagedCommand = 'git diff --name-only';
+    const unstagedOutput = execSync(unstagedCommand, { encoding: 'utf-8' }).trim();
+    
+    if (unstagedOutput) {
+      unstagedOutput.split('\n').filter(file => file).forEach(file => allFiles.add(file));
+    }
+
+    // Get staged changes
+    const stagedCommand = 'git diff --name-only --cached';
+    const stagedOutput = execSync(stagedCommand, { encoding: 'utf-8' }).trim();
+    
+    if (stagedOutput) {
+      stagedOutput.split('\n').filter(file => file).forEach(file => allFiles.add(file));
+    }
+
+    const files = Array.from(allFiles);
+
+    if (files.length === 0) {
       if (verbose) {
         console.log('[mapper] No changed files detected');
       }
       return [];
     }
-
-    const files = output.split('\n').filter(file => file);
 
     if (verbose) {
       console.log('[mapper] Changed files:');
