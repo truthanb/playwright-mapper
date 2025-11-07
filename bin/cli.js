@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   baseBranch: 'main',
   addBaseline: true,
   verbose: false,
+  playwrightOptions: [],
 };
 
 /**
@@ -89,7 +90,7 @@ Usage:
 Commands:
   run             Run Playwright tests with mapped tags (default)
   list            Show changed files and mapped tags without running tests
-  init            Create sample test-mappings.js and .mapperrc.json files
+  init            Create sample test-mappings.js and .mapperrc files
   help            Show this help message
 
 Options:
@@ -97,6 +98,15 @@ Options:
   -m, --mappings-file <file>    Path to mappings file (default: test-mappings.js)
   -v, --verbose                 Print detailed debug info
   --no-baseline                 Don't include @baseline in grep pattern
+
+Configuration (.mapperrc):
+  {
+    "baseBranch": "main",
+    "mappingsFile": "test-mappings.js",
+    "addBaseline": true,
+    "verbose": false,
+    "playwrightOptions": ["--project=chromium", "--workers=2"]
+  }
 
 Examples:
   npx playwright-mapper
@@ -147,7 +157,8 @@ module.exports = {
       mappingsFile: "test-mappings.js",
       baseBranch: "main",
       addBaseline: true,
-      verbose: false
+      verbose: false,
+      playwrightOptions: []
     };
     fs.writeFileSync(configPath, JSON.stringify(sampleConfig, null, 2));
     console.log('✅ Created .mapperrc');
@@ -206,16 +217,22 @@ function runCommand(config, playwrightArgs) {
     console.log(`  Base branch: ${config.baseBranch}`);
     console.log(`  Mappings file: ${config.mappingsFile}`);
     console.log(`  Add baseline: ${config.addBaseline}`);
+    if (config.playwrightOptions && config.playwrightOptions.length > 0) {
+      console.log(`  Playwright options: ${config.playwrightOptions.join(' ')}`);
+    }
     console.log();
   }
 
   const changedFiles = getChangedFiles(config.baseBranch, config.verbose);
 
+  // Combine config playwright options with CLI args
+  const allPlaywrightArgs = [...(config.playwrightOptions || []), ...playwrightArgs];
+
   if (changedFiles.length === 0) {
     if (config.verbose) {
       console.log('[mapper] No changes detected, running @baseline tests only');
     }
-    return runPlaywright('@baseline', playwrightArgs);
+    return runPlaywright('@baseline', allPlaywrightArgs);
   }
 
   try {
@@ -229,11 +246,11 @@ function runCommand(config, playwrightArgs) {
       console.log();
     }
 
-    return runPlaywright(grepPattern, playwrightArgs);
+    return runPlaywright(grepPattern, allPlaywrightArgs);
   } catch (error) {
     console.error('[mapper] Error:', error.message);
     console.error('[mapper] Falling back to running all tests');
-    return runPlaywright('.*', playwrightArgs);
+    return runPlaywright('.*', allPlaywrightArgs);
   }
 }
 

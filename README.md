@@ -69,6 +69,17 @@ Create a `.mapperrc` file in your project root:
 }
 ```
 
+**Optional: Add Playwright flags**
+
+```json
+{
+  "mappingsFile": "test-mappings.js",
+  "baseBranch": "main",
+  "addBaseline": true,
+  "playwrightOptions": ["--project=chromium", "--workers=2"]
+}
+```
+
 ### Configuration Options
 
 | Option | Type | Default | Description |
@@ -77,6 +88,7 @@ Create a `.mapperrc` file in your project root:
 | `baseBranch` | string | `main` | Branch to compare against |
 | `addBaseline` | boolean | `true` | Always include @baseline tests |
 | `verbose` | boolean | `false` | Enable detailed logging |
+| `playwrightOptions` | string[] | `[]` | Additional Playwright CLI flags |
 
 ### CLI Options
 
