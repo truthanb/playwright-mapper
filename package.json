@@ -3,6 +3,7 @@
   "version": "1.0.7",
   "description": "Run only the Playwright tests that matter — smart test selection and mapping based on git diff",
   "main": "src/index.js",
+  "types": "index.d.ts",
   "type": "commonjs",
   "bin": {
     "playwright-mapper": "./bin/cli.js",
@@ -11,6 +12,7 @@
   "files": [
     "bin/",
     "src/",
+    "index.d.ts",
     "README.md",
     "LICENSE"
   ],

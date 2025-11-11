@@ -140,20 +140,6 @@ npx playwright-mapper -- --headed --project=chromium
 5. Executes Playwright with the computed tag filter
 6. Returns the same exit code as Playwright for CI integration
 
-## Programmatic API
-
-Use the library functions directly in your scripts:
-
-```js
-const { getChangedFiles, getMappedTags, computeGrepPattern } = require('playwright-mapper');
-
-const changedFiles = getChangedFiles('main');
-const tags = getMappedTags(changedFiles, './test-mappings.js');
-const grepPattern = computeGrepPattern(tags);
-
-console.log(`Running tests: ${grepPattern}`);
-```
-
 ## CI Integration
 
 ### GitHub Actions
@@ -176,6 +162,22 @@ test:
 ```groovy
 sh 'npx playwright-mapper --base-branch origin/main'
 ```
+
+## Programmatic API
+
+For advanced use cases, you can use the library functions directly in scripts:
+
+```js
+const { getChangedFiles, getMappedTags, computeGrepPattern, runPlaywright } = require('playwright-mapper');
+
+const changedFiles = getChangedFiles('main');
+const tags = getMappedTags(changedFiles, './test-mappings.js'); // or pass mappings object directly
+const grepPattern = computeGrepPattern(tags); // includes @baseline by default
+
+runPlaywright(tags, '--project=chromium');
+```
+
+TypeScript declarations are included for better development experience.
 
 ## Safety Features
 
