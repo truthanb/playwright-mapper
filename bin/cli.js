@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   baseBranch: 'main',
   addBaseline: true,
   verbose: false,
+  diffStrategy: 'branch',
   playwrightOptions: [],
 };
 
@@ -62,6 +63,13 @@ function parseArgs(args) {
       parsed.config.baseBranch = args[++i];
     } else if (arg === '--mappings-file' || arg === '-m') {
       parsed.config.mappingsFile = args[++i];
+    } else if (arg === '--diff-strategy' || arg === '-d') {
+      const strategy = args[++i];
+      if (!['branch', 'merge-commit', 'auto'].includes(strategy)) {
+        console.error(`[mapper] Invalid diff strategy: "${strategy}". Must be one of: branch, merge-commit, auto`);
+        process.exit(1);
+      }
+      parsed.config.diffStrategy = strategy;
     } else if (arg === '--verbose' || arg === '-v') {
       parsed.config.verbose = true;
     } else if (arg === '--no-baseline') {
@@ -95,6 +103,10 @@ Commands:
 
 Options:
   -b, --base-branch <branch>    Branch to diff against (default: main)
+  -d, --diff-strategy <mode>    How to detect changes (default: branch)
+                                  branch       — diff baseBranch...HEAD (feature branch workflow)
+                                  merge-commit — diff HEAD^1..HEAD (post-merge workflow)
+                                  auto         — try branch first, fall back to merge-commit
   -m, --mappings-file <file>    Path to mappings file (default: test-mappings.js)
   -v, --verbose                 Print detailed debug info
   --no-baseline                 Don't include @baseline in grep pattern
@@ -103,6 +115,7 @@ Configuration (.mapperrc):
   {
     "baseBranch": "main",
     "mappingsFile": "test-mappings.js",
+    "diffStrategy": "branch",
     "addBaseline": true,
     "verbose": false,
     "playwrightOptions": ["--project=chromium", "--workers=2"]
@@ -112,6 +125,7 @@ Examples:
   npx playwright-mapper
   npx playwright-mapper list
   npx playwright-mapper --base-branch develop
+  npx playwright-mapper --diff-strategy auto
   npx playwright-mapper --verbose
   npx playwright-mapper -- --headed --project=chromium
 
@@ -156,6 +170,7 @@ module.exports = {
     const sampleConfig = {
       mappingsFile: "test-mappings.js",
       baseBranch: "main",
+      diffStrategy: "branch",
       addBaseline: true,
       verbose: false,
       playwrightOptions: []
@@ -175,10 +190,11 @@ module.exports = {
 function listCommand(config) {
   console.log('\n[mapper] Configuration:');
   console.log(`  Base branch: ${config.baseBranch}`);
+  console.log(`  Diff strategy: ${config.diffStrategy}`);
   console.log(`  Mappings file: ${config.mappingsFile}`);
   console.log(`  Add baseline: ${config.addBaseline}`);
 
-  const changedFiles = getChangedFiles(config.baseBranch, true);
+  const changedFiles = getChangedFiles(config.baseBranch, true, config.diffStrategy);
 
   if (changedFiles.length === 0) {
     console.log('\n[mapper] No changed files detected');
@@ -215,6 +231,7 @@ function runCommand(config, playwrightArgs) {
   if (config.verbose) {
     console.log('\n[mapper] Configuration:');
     console.log(`  Base branch: ${config.baseBranch}`);
+    console.log(`  Diff strategy: ${config.diffStrategy}`);
     console.log(`  Mappings file: ${config.mappingsFile}`);
     console.log(`  Add baseline: ${config.addBaseline}`);
     if (config.playwrightOptions && config.playwrightOptions.length > 0) {
@@ -223,7 +240,7 @@ function runCommand(config, playwrightArgs) {
     console.log();
   }
 
-  const changedFiles = getChangedFiles(config.baseBranch, config.verbose);
+  const changedFiles = getChangedFiles(config.baseBranch, config.verbose, config.diffStrategy);
 
   // Combine config playwright options with CLI args
   const allPlaywrightArgs = [...(config.playwrightOptions || []), ...playwrightArgs];

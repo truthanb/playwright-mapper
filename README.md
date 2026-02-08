@@ -97,9 +97,20 @@ Create a `.mapperrc` file in your project root:
 |--------|------|---------|-------------|
 | `mappingsFile` | string | `test-mappings.js` | Path to your mappings file |
 | `baseBranch` | string | `main` | Branch to compare against |
+| `diffStrategy` | string | `branch` | How to detect changes (see below) |
 | `addBaseline` | boolean | `true` | Always include @baseline tests |
 | `verbose` | boolean | `false` | Enable detailed logging |
 | `playwrightOptions` | string[] | `[]` | Additional Playwright CLI flags |
+
+### Diff Strategies
+
+| Strategy | Git Command | Best For |
+|----------|-------------|----------|
+| `branch` | `baseBranch...HEAD` | Feature branch pipelines (default) |
+| `merge-commit` | `HEAD^1..HEAD` | Post-merge pipelines where HEAD is on the target branch |
+| `auto` | Tries `branch`, falls back to `merge-commit` | CI systems that run tests both on MRs and after merge |
+
+**When to use `auto`:** If your CI runs playwright-mapper both during merge requests (feature branch) and after merging (on the target branch), `auto` handles both cases. It first tries the standard branch diff; if that returns zero changes and HEAD is a merge commit, it automatically falls back to diffing the merge commit against its first parent.
 
 ### CLI Options
 
@@ -114,6 +125,7 @@ npx playwright-mapper [command] [options]
 
 **Options:**
 - `-b, --base-branch <branch>` - Override base branch
+- `-d, --diff-strategy <mode>` - How to detect changes: `branch`, `merge-commit`, or `auto`
 - `-m, --mappings-file <file>` - Override mappings file path
 - `-v, --verbose` - Enable verbose output
 - `--no-baseline` - Exclude @baseline tests
@@ -152,9 +164,15 @@ npx playwright-mapper -- --headed --project=chromium
 ### GitLab CI
 
 ```yaml
+# On merge request pipelines (feature branch):
 test:
   script:
     - npx playwright-mapper --base-branch origin/main
+
+# On post-merge pipelines (target branch), use auto strategy:
+test:
+  script:
+    - npx playwright-mapper --base-branch origin/develop --diff-strategy auto
 ```
 
 ### Jenkins

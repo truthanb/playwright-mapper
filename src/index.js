@@ -3,12 +3,59 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Get list of changed files between current branch and base branch
- * @param {string} baseBranch - Branch to diff against (default: 'main')
+ * Check if HEAD is a merge commit (has 2+ parents)
+ * @param {boolean} verbose - Print debug info
+ * @returns {boolean}
+ */
+function isMergeCommit(verbose = false) {
+  try {
+    const parents = execSync('git rev-list --parents -n 1 HEAD', { encoding: 'utf-8' })
+      .trim()
+      .split(/\s+/);
+    // First element is the commit itself, remaining are parents
+    const parentCount = parents.length - 1;
+    if (verbose) {
+      console.log(`[mapper] HEAD has ${parentCount} parent(s) — ${parentCount >= 2 ? 'merge commit' : 'regular commit'}`);
+    }
+    return parentCount >= 2;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get changed files from a merge commit by diffing against its first parent.
+ * This shows exactly what the merge introduced relative to the target branch.
  * @param {boolean} verbose - Print debug info
  * @returns {string[]} Array of changed file paths
  */
-function getChangedFiles(baseBranch = 'main', verbose = false) {
+function getChangedFilesFromMergeCommit(verbose = false) {
+  try {
+    const diffCommand = 'git diff --name-only HEAD^1 HEAD';
+    if (verbose) {
+      console.log(`[mapper] Using merge-commit diff: ${diffCommand}`);
+    }
+    const output = execSync(diffCommand, { encoding: 'utf-8' }).trim();
+    if (!output) {
+      return [];
+    }
+    return output.split('\n').filter(file => file);
+  } catch (error) {
+    if (verbose) {
+      console.warn('[mapper] Error getting merge commit diff:', error.message);
+    }
+    return [];
+  }
+}
+
+/**
+ * Get list of changed files between current branch and base branch
+ * @param {string} baseBranch - Branch to diff against (default: 'main')
+ * @param {boolean} verbose - Print debug info
+ * @param {string} diffStrategy - Strategy for detecting changes: 'branch' | 'merge-commit' | 'auto' (default: 'branch')
+ * @returns {string[]} Array of changed file paths
+ */
+function getChangedFiles(baseBranch = 'main', verbose = false, diffStrategy = 'branch') {
   try {
     const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')
       .toString()
@@ -17,6 +64,40 @@ function getChangedFiles(baseBranch = 'main', verbose = false) {
     if (verbose) {
       console.log(`[mapper] Current branch: ${currentBranch}`);
       console.log(`[mapper] Base branch: ${baseBranch}`);
+      console.log(`[mapper] Diff strategy: ${diffStrategy}`);
+    }
+
+    // If explicitly using merge-commit strategy, go straight to that
+    if (diffStrategy === 'merge-commit') {
+      if (!isMergeCommit(verbose)) {
+        if (verbose) {
+          console.log('[mapper] HEAD is not a merge commit; falling back to single-parent diff (HEAD~1..HEAD)');
+        }
+        try {
+          const output = execSync('git diff --name-only HEAD~1 HEAD', { encoding: 'utf-8' }).trim();
+          const files = output ? output.split('\n').filter(file => file) : [];
+          if (verbose && files.length > 0) {
+            console.log('[mapper] Changed files (from parent diff):');
+            files.forEach(file => console.log(` - ${file}`));
+          }
+          return files;
+        } catch (error) {
+          if (verbose) {
+            console.warn('[mapper] Error getting parent diff:', error.message);
+          }
+          return [];
+        }
+      }
+      const files = getChangedFilesFromMergeCommit(verbose);
+      if (verbose) {
+        if (files.length > 0) {
+          console.log('[mapper] Changed files (from merge commit):');
+          files.forEach(file => console.log(` - ${file}`));
+        } else {
+          console.log('[mapper] No changed files detected from merge commit');
+        }
+      }
+      return files;
     }
 
     const allFiles = new Set();
@@ -46,6 +127,24 @@ function getChangedFiles(baseBranch = 'main', verbose = false) {
     }
 
     const files = Array.from(allFiles);
+
+    // In 'auto' mode: if branch diff found nothing, check if we're on a merge commit
+    // and fall back to diffing against the first parent
+    if (files.length === 0 && diffStrategy === 'auto') {
+      if (verbose) {
+        console.log('[mapper] No changes from branch diff — checking if HEAD is a merge commit...');
+      }
+      if (isMergeCommit(verbose)) {
+        const mergeFiles = getChangedFilesFromMergeCommit(verbose);
+        if (mergeFiles.length > 0) {
+          if (verbose) {
+            console.log('[mapper] Changed files (from merge commit fallback):');
+            mergeFiles.forEach(file => console.log(` - ${file}`));
+          }
+          return mergeFiles;
+        }
+      }
+    }
 
     if (files.length === 0) {
       if (verbose) {
@@ -167,6 +266,8 @@ function runPlaywright(grepPattern, additionalArgs = []) {
 
 module.exports = {
   getChangedFiles,
+  getChangedFilesFromMergeCommit,
+  isMergeCommit,
   getMappedTags,
   computeGrepPattern,
   runPlaywright,
